@@ -1,11 +1,11 @@
 import logo from './logo.svg';
 import './App.css';
-import Input from './Input';
+import SpeedReader from './SpeedReader';
 
 function App() {
   return (
     <div className="App">
-      <Input/>
+      <SpeedReader/>
     </div>
   );
 }

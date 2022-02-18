@@ -1,29 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react'
 
-export default function Input() {
+export default function SpeedReader() {
     // play = 1, pause = 0
     const [playing, setPlaying] = useState(false);
     const [text, setText] = useState("a b c d e f g h i j k l m n o p");
     const [word, setWord] = useState("");
     const [waitTime, setWaitTime] = useState(240);
     const [wpm, setWpm] = useState(250);
+    const [index, setIndex] = useState(0);
 
     const handlePlayPause = (event) => {
-        if(playing){
-            loopThruText();
-        } else {
-            loopThruText(text, 0);
-        }
-    }
-
-    const loopThruText = (input, i) => {
-        let words = input.split(" ");
-        console.log(playing);
-        setTimeout(() => {
-            setWord(words[i]);
-            if(i < words.length)
-                loopThruText(input, i+1);
-        }, waitTime);
+        setPlaying(!playing);   
     }
 
     const handleSpeedChange = (event) => {
@@ -32,6 +19,17 @@ export default function Input() {
         let ticks = freq_secs * 1000;
         setWaitTime(ticks)
     }
+
+    useEffect(() => {
+        let words = text.split(" ");
+        console.log(playing);
+        setTimeout(() => {
+            setWord(words[index]);
+            if(index < words.length && playing){
+                setIndex(index + 1);
+            }
+        }, waitTime);
+    });
 
     return (
         <div>
@@ -58,4 +56,8 @@ export default function Input() {
             </div>
         </div>
     )
+}
+
+function LoopThruText(waitTime, setWord, input, i){
+    
 }
