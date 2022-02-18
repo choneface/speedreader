@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 
 export default function SpeedReader() {
-    // play = 1, pause = 0
     const [playing, setPlaying] = useState(false);
     const [text, setText] = useState("a b c d e f g h i j k l m n o p");
     const [word, setWord] = useState("");
@@ -25,8 +24,11 @@ export default function SpeedReader() {
         console.log(playing);
         setTimeout(() => {
             setWord(words[index]);
-            if(index < words.length && playing){
+            if(index < words.length && playing){ //change state -> cause loop
                 setIndex(index + 1);
+            } else if (playing){ // we're done, reset index
+                setPlaying(false);
+                setIndex(0);
             }
         }, waitTime);
     });
