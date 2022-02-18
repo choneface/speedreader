@@ -1,10 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react'
-// import {Textarea} from '@primer/react'
-// import '@primer/css/utilities/index.scss';
+import React, { useEffect, useState } from 'react'
 import Button from '@mui/material/Button';
+import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
-import "./SpeedReader.css"
-import { Box } from '@mui/material';
+import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import Stack from '@mui/material/Stack';
+import LinearProgress from '@mui/material/LinearProgress'
 
 export default function SpeedReader() {
     const [playing, setPlaying] = useState(false);
@@ -13,6 +17,7 @@ export default function SpeedReader() {
     const [waitTime, setWaitTime] = useState(240);
     const [wpm, setWpm] = useState(250);
     const [index, setIndex] = useState(0);
+    const [progress, setProgress] = useState(0);
 
     const handlePlayPause = (event) => {
         setPlaying(!playing);   
@@ -24,83 +29,119 @@ export default function SpeedReader() {
         let ticks = freq_secs * 1000;
         setWaitTime(ticks)
     }
+    const updateProgress = (words) => {
+        if(index !== 0){
+            console.log(index/words.length);
+            setProgress((index/(words.length-1)) * 100);
+        }
+    }
+    const updateIndex = (words) => {
+        if(index < words.length-1 && playing){ //change state -> cause loop
+            setIndex(index + 1);
+        } else if (playing){ // we're done, reset index
+            setPlaying(false);
+            setIndex(0);
+        }
+    }
 
     useEffect(() => {
-        let words = text.split(" ");
+        let words = text.replaceAll(/[\r\n\t]/g, " ").split(" ");
         console.log(playing);
         setTimeout(() => {
-            
+            updateProgress(words);
             setWord(words[index]);
-            if(index < words.length-1 && playing){ //change state -> cause loop
-                setIndex(index + 1);
-            } else if (playing){ // we're done, reset index
-                setPlaying(false);
-                setIndex(0);
-            }
+            updateIndex(words);
         }, waitTime);
     });
 
+    const theme = createTheme();
     return (
-        <div>
-            <div className="display">
-                <div>{word}</div>
-            </div>
-            
-            <div class="anim-grow-x py-2 color-bg-success-emphasis"></div>
+        <ThemeProvider theme={theme}>
+          <Container component="main" maxWidth="xs">
+            <CssBaseline />
+            <Box
+              sx={{
+                marginTop: 8,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                autocomplete: "off",
+              }}
+            >
+                {/* Display  */}
+              <Typography component="h1" variant="h1">
+                  {word}
+              </Typography>
 
-            <div className='p-12'>
-                <div className="Box">
-                    <div className="Box-header d-flex flex-items-center">
-                        <h3 className="Box-title overflow-hidden flex-auto">
-                        Control Panel
-                        </h3>
-                    </div>
-                    <form>
-                        <div className="Box-body">
-                            <div className="form-group">
-                                <div className="form-group-header">
-                                    <label>Speed</label>
-                                </div>
-                                <div className="form-group-body">
-                                    <input 
-                                        className="form-control"
-                                        type="number"
-                                        defaultValue={wpm}
-                                        onInput={(e) => setWpm(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <div className="form-group">
-                                <div className="form-group-header">
-                                    <label>Text</label>
-                                </div>
-                                <div className="form-group-body">
-                                    <textarea 
-                                        className="form-control"
-                                        type="text"
-                                        type="text"
-                                        value={text}
-                                        onChange={(e) => setText(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="Box-footer text-right">
-                            <button type="button" onClick={handleSpeedChange}>
-                                Update Speed
-                            </button>
-                            <button className="btn btn-primary" type="button" onClick={handlePlayPause}>
-                                Play/Pause
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    )
+              <Box width="100%">
+              <LinearProgressWithLabel variant="determinate" value={progress} />
+              </Box>
+              
+                {/*Control Buttons*/}
+              <Stack
+                sx={{ pt: 4 }}
+                direction="row"
+                spacing={2}
+                justifyContent="center"
+              >
+                <Button variant="contained" type="button"
+                    onClick={handlePlayPause}
+                >
+                    Play/Pause
+                </Button>
+                <Button variant="outlined" type="button"
+                    onClick={handleSpeedChange}
+                >
+                    Set Speed
+                </Button>
+              </Stack>
+              
+              {/* Inputs */}
+              <Box component="form" sx={{ mt: 3 }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      name="wpm"
+                      fullWidth
+                      id="wpm"
+                      label="Words Per Minute"
+                      
+                      value={wpm}
+                      onChange={(e) => setWpm(e.target.value)}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      autoFocus
+                      id="text"
+                      multiline
+                      label="Your Text"
+                      name="text"
+                      rows={20}
+                      value={text}
+                      onInput={(e) => setText(e.target.value)}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            </Box>
+          </Container>
+        </ThemeProvider>
+      );
 }
 
-function LoopThruText(waitTime, setWord, input, i){
-    
-}
+function LinearProgressWithLabel(props) {
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ width: '100%', mr: 1 }}>
+          <LinearProgress variant="determinate" {...props} />
+        </Box>
+        <Box sx={{ minWidth: 35 }}>
+          <Typography variant="body2" color="text.secondary">{`${Math.round(
+            props.value,
+          )}%`}</Typography>
+        </Box>
+      </Box>
+    );
+  }
