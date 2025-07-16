@@ -166,22 +166,40 @@ function SectionEditor({ value, disabled, showDelete, onChange, onSplit, onDelet
 
       {!disabled && hover && (
         <AnimatePresence>
+        {hover && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="pointer-events-none absolute"
+            key="split-cursor"
+            initial={{ opacity: 0, scaleY: 0.8 }}
+            animate={{ opacity: 1, scaleY: 1 }}
+            exit={{ opacity: 0, scaleY: 0.8 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            className="pointer-events-none absolute z-50"
             style={{
-              left: hover.rect.right - ref.current!.getBoundingClientRect().left,
-              top: hover.rect.top - ref.current!.getBoundingClientRect().top,
+              left:
+                hover.rect.right - ref.current!.getBoundingClientRect().left,
+              top:
+                hover.rect.top -
+                ref.current!.getBoundingClientRect().top +
+                hover.rect.height / 2,
             }}
+            aria-label="Split position"
           >
-            <div className="h-8 w-px bg-red-400/50" />
-            <div className="relative mt-[-0.25rem]">
-              <Scissors size={16} className="text-gray-700" />
-            </div>
+            {/* tiny guide tick */}
+            <div className="w-[2px] h-10 bg-blue-500/70 rounded-sm" />
+      
+            {/* scissors inside a circular badge */}
+            <motion.div
+              aria-hidden
+              whileHover={{ rotate: [0, -10, 0] }}
+              className="-translate-y-1/2 -left-[0.75rem] absolute flex items-center justify-center
+                         w-6 h-6 rounded-full bg-gray-200/80 shadow-sm backdrop-blur"
+            >
+              <Scissors size={14} className="text-gray-700" />
+            </motion.div>
           </motion.div>
-        </AnimatePresence>
+        )}
+      </AnimatePresence>
+      
       )}
     </div>
   );
