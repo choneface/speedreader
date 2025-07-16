@@ -75,7 +75,7 @@ export default function SpeedReader() {
       <CssBaseline />
 
       <Typography variant="h2" align="center" sx={{ mt: 2 }}>
-        {currentWord || ' '}
+        {currentWord || '...'}
       </Typography>
 
       <LinearProgressWithLabel value={progress} />
@@ -86,6 +86,7 @@ export default function SpeedReader() {
     <Button
       variant="contained"
       color="error"
+      sx={{ textTransform: 'none' }}
       onClick={() => {
         setCompleted([]);
         setCurrent(0);
@@ -102,6 +103,7 @@ export default function SpeedReader() {
       variant="contained"
       onClick={togglePlay}
       disabled={false}
+      sx={{ textTransform: 'none' }}
     >
       {playing ? 'Pause' : 'Play'}
     </Button>
