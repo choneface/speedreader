@@ -66,51 +66,44 @@ interface SectionEditorProps {
 
 function SectionEditor({ value, onChange, onSplit }: SectionEditorProps) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const [hover, setHover] =
-    useState<{ rect: DOMRect; index: number } | null>(null);
+  const [hover, setHover] = useState<{ rect: DOMRect; index: number } | null>(null);
 
-  /* sync external value → inner div */
+  /* keep editable content in sync */
   useEffect(() => {
     if (ref.current && ref.current.innerText !== value) {
       ref.current.innerText = value;
     }
   }, [value]);
 
-  /* ───── plain‑text paste to strip formatting ───── */
+  /* paste → plain text */
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    document.execCommand('insertText', false, text); // simple cross‑browser way
+    const txt = e.clipboardData.getData('text/plain');
+    document.execCommand('insertText', false, txt);
   };
 
-  /* ───── input change ───── */
-  const handleInput = () => {
-    if (ref.current) onChange(ref.current.innerText);
-  };
+  /* propagate edits upward */
+  const handleInput = () => ref.current && onChange(ref.current.innerText);
 
-  /* ───── hover logic with snap to word boundary ───── */
+  /* hover → compute nearest space boundary */
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const raw = document.caretRangeFromPoint?.(e.clientX, e.clientY);
     if (!raw || !ref.current || !ref.current.contains(raw.startContainer))
       return setHover(null);
 
-    // absolute char index at cursor
     const pre = document.createRange();
     pre.setStart(ref.current, 0);
     pre.setEnd(raw.startContainer, raw.startOffset);
     let idx = pre.toString().length;
     const txt = value;
 
-    // snap to nearest space (scan right)
     while (idx < txt.length && txt[idx] !== ' ') idx++;
     if (idx === txt.length) return setHover(null);
 
-    // measure rect at the snapped space
-    const snapRange = document.createRange();
-    snapRange.setStart(raw.startContainer, raw.startOffset + (idx - pre.toString().length));
-    snapRange.collapse(true);
-    const rect = snapRange.getBoundingClientRect();
-    const box = ref.current.getBoundingClientRect();
+    const snap = document.createRange();
+    snap.setStart(raw.startContainer, raw.startOffset + (idx - pre.toString().length));
+    snap.collapse(true);
+    const rect = snap.getBoundingClientRect();
 
     setHover({
       rect: new DOMRect(rect.right + 15, rect.top, 0, rect.height),
@@ -118,19 +111,31 @@ function SectionEditor({ value, onChange, onSplit }: SectionEditorProps) {
     });
   };
 
-  const clearHover = () => setHover(null);
-
-  const handleSplit = () => {
+  /* perform split */
+  const performSplit = () => {
     if (!hover) return;
     const before = value.slice(0, hover.index).trimEnd();
     const after = value.slice(hover.index).trimStart();
     onSplit(before, after);
-    clearHover();
+    setHover(null);
   };
 
-  /* ───── render ───── */
+  /* click anywhere while guide visible → split */
+  const handleClick = (e: React.MouseEvent) => {
+    if (hover) {
+      e.preventDefault();
+      performSplit();
+    }
+  };
+
+  /* render */
   return (
-    <div className="relative border border-gray-300 rounded-2xl p-4 bg-white shadow-sm">
+    <div
+      className="relative border border-gray-300 rounded-2xl p-4 bg-white shadow-sm"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setHover(null)}
+      onClick={handleClick}
+    >
       <div
         ref={ref}
         contentEditable
@@ -138,8 +143,6 @@ function SectionEditor({ value, onChange, onSplit }: SectionEditorProps) {
         className="outline-none whitespace-pre-wrap break-words min-h-[4rem]"
         onInput={handleInput}
         onPaste={handlePaste}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={clearHover}
       />
 
       <AnimatePresence>
@@ -155,13 +158,9 @@ function SectionEditor({ value, onChange, onSplit }: SectionEditorProps) {
             }}
           >
             <div className="h-8 w-px bg-red-400/50" />
+            {/* visual cue only – split triggers on any click now */}
             <div className="relative mt-[-0.25rem]">
-              <button
-                onClick={handleSplit}
-                className="pointer-events-auto bg-white shadow p-1 rounded-full border hover:bg-red-50 transition"
-              >
-                <Scissors size={16} className="text-gray-700" />
-              </button>
+              <Scissors size={16} className="text-gray-700" />
             </div>
           </motion.div>
         )}
