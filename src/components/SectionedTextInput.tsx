@@ -1,22 +1,29 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Scissors } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 /* ────────────────────────────────────────────────────────────────────────────
-   SectionedTextInput  ▸  top‑level component
-   ------------------------------------------------------------------------- */
+   SectionedTextInput
+   --------------------------------------------------------------------------
+   • Renders editable text split into sections.
+   • Emits `onSectionsChange` with latest sections array.
+   • Accepts `completed` (indices) to grey‑out finished sections and disable
+     further splitting in them.
+*/
 export interface SectionedTextInputProps {
   initialSections?: string[];
+  completed?: number[];                   // indices that are done
   onSectionsChange?(sections: string[]): void;
 }
 
 export default function SectionedTextInput({
   initialSections = [''],
+  completed = [],
   onSectionsChange,
 }: SectionedTextInputProps) {
   const [sections, setSections] = useState<string[]>(initialSections);
 
-  /* bubble changes upward */
+  /* bubble up */
   useEffect(() => onSectionsChange?.(sections), [sections, onSectionsChange]);
 
   /* helpers */
@@ -39,114 +46,101 @@ export default function SectionedTextInput({
 
   return (
     <div className="flex flex-col gap-2 w-full">
-      {sections.map((txt, i) => (
-        <React.Fragment key={i}>
-          <SectionEditor
-            value={txt}
-            onChange={v => update(i, v)}
-            onSplit={(a, b) => split(i, a, b)}
-          />
-          {i < sections.length - 1 && (
-            <div className="w-full flex justify-center text-2xl select-none opacity-60">⋯⋯⋯</div>
-          )}
-        </React.Fragment>
-      ))}
+      {sections.map((txt, i) => {
+        const done = completed.includes(i);
+        return (
+          <React.Fragment key={i}>
+            <SectionEditor
+              value={txt}
+              disabled={done}
+              onChange={v => update(i, v)}
+              onSplit={(a, b) => split(i, a, b)}
+            />
+            {i < sections.length - 1 && (
+              <div className="w-full flex justify-center text-2xl select-none opacity-60">⋯⋯⋯</div>
+            )}
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
-   SectionEditor  ▸  editable block with hover‑split UI
-   ------------------------------------------------------------------------- */
+   SectionEditor
+   --------------------------------------------------------------------------*/
 interface SectionEditorProps {
   value: string;
+  disabled?: boolean;
   onChange(v: string): void;
   onSplit(before: string, after: string): void;
 }
 
-function SectionEditor({ value, onChange, onSplit }: SectionEditorProps) {
+function SectionEditor({ value, disabled, onChange, onSplit }: SectionEditorProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [hover, setHover] = useState<{ rect: DOMRect; index: number } | null>(null);
 
-  /* keep editable content in sync */
   useEffect(() => {
-    if (ref.current && ref.current.innerText !== value) {
-      ref.current.innerText = value;
-    }
+    if (ref.current && ref.current.innerText !== value) ref.current.innerText = value;
   }, [value]);
 
-  /* paste → plain text */
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    if (disabled) return;
     e.preventDefault();
     const txt = e.clipboardData.getData('text/plain');
     document.execCommand('insertText', false, txt);
   };
 
-  /* propagate edits upward */
-  const handleInput = () => ref.current && onChange(ref.current.innerText);
+  const handleInput = () => !disabled && ref.current && onChange(ref.current.innerText);
 
-  /* hover → compute nearest space boundary */
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (disabled) return;
     const raw = document.caretRangeFromPoint?.(e.clientX, e.clientY);
-    if (!raw || !ref.current || !ref.current.contains(raw.startContainer))
-      return setHover(null);
+    if (!raw || !ref.current || !ref.current.contains(raw.startContainer)) return setHover(null);
 
     const pre = document.createRange();
     pre.setStart(ref.current, 0);
     pre.setEnd(raw.startContainer, raw.startOffset);
     let idx = pre.toString().length;
     const txt = value;
-
-    while (idx < txt.length && txt[idx] !== ' ') idx++;
+    while (idx < txt.length && txt[idx] !== ' ' && txt[idx] != '\n') idx++;
     if (idx === txt.length) return setHover(null);
 
     const snap = document.createRange();
     snap.setStart(raw.startContainer, raw.startOffset + (idx - pre.toString().length));
     snap.collapse(true);
     const rect = snap.getBoundingClientRect();
-
-    setHover({
-      rect: new DOMRect(rect.right + 15, rect.top, 0, rect.height),
-      index: idx,
-    });
+    setHover({ rect: new DOMRect(rect.right + 15, rect.top, 0, rect.height), index: idx });
   };
 
-  /* perform split */
   const performSplit = () => {
-    if (!hover) return;
+    if (!hover || disabled) return;
     const before = value.slice(0, hover.index).trimEnd();
     const after = value.slice(hover.index).trimStart();
     onSplit(before, after);
     setHover(null);
   };
 
-  /* click anywhere while guide visible → split */
-  const handleClick = (e: React.MouseEvent) => {
-    if (hover) {
-      e.preventDefault();
-      performSplit();
-    }
-  };
-
-  /* render */
   return (
     <div
-      className="relative border border-gray-300 rounded-2xl p-4 bg-white shadow-sm"
+      className={`relative border rounded-2xl p-4 shadow-sm ${
+        disabled ? 'bg-gray-100 text-gray-500 italic' : 'bg-white border-gray-300'
+      }`}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setHover(null)}
-      onClick={handleClick}
+      onClick={performSplit}
     >
       <div
         ref={ref}
-        contentEditable
+        contentEditable={!disabled}
         suppressContentEditableWarning
         className="outline-none whitespace-pre-wrap break-words min-h-[4rem]"
         onInput={handleInput}
         onPaste={handlePaste}
       />
 
-      <AnimatePresence>
-        {hover && (
+      {!disabled && hover && (
+        <AnimatePresence>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -158,13 +152,14 @@ function SectionEditor({ value, onChange, onSplit }: SectionEditorProps) {
             }}
           >
             <div className="h-8 w-px bg-red-400/50" />
-            {/* visual cue only – split triggers on any click now */}
             <div className="relative mt-[-0.25rem]">
               <Scissors size={16} className="text-gray-700" />
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>
+      )}
     </div>
   );
 }
+
+/* Deps: lucide-react, framer-motion, Tailwind 3 */

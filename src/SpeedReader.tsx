@@ -1,106 +1,122 @@
-import React, { useEffect, useState } from "react";
-import { Box, Button, Container, CssBaseline, LinearProgress, Stack, TextField, Typography } from "@mui/material";
-import Grid from "@mui/material/Grid";
-import SectionedTextInput from "./components/SectionedTextInput";
+import React, { useEffect, useState } from 'react';
+import {
+  Box,
+  Button,
+  Container,
+  CssBaseline,
+  LinearProgress,
+  Stack,
+  Typography,
+  TextField,
+  Grid,
+} from '@mui/material';
+import SectionedTextInput from './components/SectionedTextInput';
 
-/*
- ──────────────────────────────────────────────────────────────────────────────
-  MVP Speed‑Reader component
-  ---------------------------------------------------------------------------
-  Works out‑of‑the‑box in a Vite + React‑TS + MUI 5 + Tailwind project.
-  Copy this file into `src/` and import <SpeedReader /> in App.tsx.
-*/
+/*─────────────────────────────────────────────────────────────────────────────
+  SpeedReader v2  –  section‑aware with WPM control
+  ---------------------------------------------------------------------------*/
 export default function SpeedReader() {
-  // ─────────────── state
+  /* text & sections */
+  const [sections, setSections] = useState<string[]>(['']);
+  const [current, setCurrent] = useState(0);          // section index
+  const [completed, setCompleted] = useState<number[]>([]);
+
+  /* reading */
   const [playing, setPlaying] = useState(false);
-  const [text, setText] = useState("");
-  const [currentWord, setCurrentWord] = useState(" ");
+  const [wordIdx, setWordIdx] = useState(0);
+  const [currentWord, setCurrentWord] = useState('');
   const [wpm, setWpm] = useState(250);
-  const [index, setIndex] = useState(0);
+  const wait = 60_000 / wpm;
+
+  /* progress bar inside section */
   const [progress, setProgress] = useState(0);
 
-  // waitTime derived from wpm → ms per word
-  const waitTimeMs = 60_000 / wpm;
+  /* words of current section */
+  const words =
+    sections[current]
+      ?.replaceAll(/[\r\n\t]+/g, ' ')
+      .split(' ')
+      .filter(Boolean) ?? [];
 
-  /* ─────────────────────────────────────────  Reader loop  */
+  /* reading loop */
   useEffect(() => {
-    if (!playing) return; // pause gate
-
-    const words = text.replaceAll(/[\r\n\t]+/g, " ").split(" ").filter(Boolean);
+    if (!playing) return;
     if (!words.length) return;
 
     const timer = setTimeout(() => {
-      setCurrentWord(words[index]);
-      setProgress((index / (words.length - 1)) * 100);
+      setCurrentWord(words[wordIdx]);
+      setProgress((wordIdx / (words.length - 1)) * 100);
 
-      if (index < words.length - 1) {
-        setIndex(i => i + 1);
+      if (wordIdx < words.length - 1) {
+        setWordIdx(i => i + 1);
       } else {
+        // finished section
+        setCompleted(prev => [...prev, current]);
         setPlaying(false);
-        setIndex(0);
+        setWordIdx(0);
+        setProgress(0);
+        setCurrentWord('');
+        setCurrent(i => Math.min(i + 1, sections.length - 1));
       }
-    }, waitTimeMs);
-
+    }, wait);
     return () => clearTimeout(timer);
-  }, [index, playing, waitTimeMs, text]);
+  }, [playing, wordIdx, wait, words, current, sections.length]);
 
-  /* ─────────────────────────────────────────  Handlers  */
-  const handleTogglePlay = () => setPlaying(p => !p);
-
+  /* handlers */
+  const togglePlay = () => setPlaying(p => !p);
   const handleWpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = Number(e.target.value);
     if (!Number.isNaN(v) && v > 0) setWpm(v);
   };
 
-  /* ─────────────────────────────────────────  UI  */
+  /* render */
   return (
-    <Container maxWidth="sm" className="py-10">
+    <Container maxWidth="md" className="py-10">
       <CssBaseline />
 
-      {/* Display word */}
-      <Typography variant="h1" align="center" sx={{ mb: 2, fontSize: "4rem" }}>
-        {currentWord}
+      <Typography variant="h2" align="center" sx={{ mt: 2 }}>
+        {currentWord || ' '}
       </Typography>
 
-      {/* Progress bar */}
       <LinearProgressWithLabel value={progress} />
 
-      {/* Controls */}
-      <Stack direction="row" spacing={2} justifyContent="center" sx={{ my: 3 }}>
-        <Button variant="contained" onClick={handleTogglePlay}>
-          {playing ? "Pause" : "Play"}
-        </Button>
-      </Stack>
-
-      {/* Inputs */}
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ my: 3 }}>
+      <Stack direction="row" spacing={2} justifyContent="center" height="100%" alignItems="center">
+            <Button
+              variant="contained"
+              onClick={togglePlay}
+              disabled={completed.length === sections.length}
+            >
+              {playing ? 'Pause' : 'Play'}
+            </Button>
+          </Stack>
           <TextField
             label="Words per minute"
             type="number"
+            fullWidth
             value={wpm}
             onChange={handleWpmChange}
-            fullWidth
-          />
-          <SectionedTextInput
-            onSectionsChange={sections => setText(sections.join(' '))}
           />
       </Grid>
+
+      <SectionedTextInput
+        completed={completed}
+        onSectionsChange={setSections}
+      />
     </Container>
   );
 }
 
-/* Helper component to show progress bar with % label */
-interface LPProps {
-  value: number; // 0‑100
-}
-
-function LinearProgressWithLabel({ value }: LPProps) {
+/* progress helper */
+function LinearProgressWithLabel({ value }: { value: number }) {
   return (
-    <Box display="flex" alignItems="center" gap={1} mb={2}>
+    <Box display="flex" alignItems="center" gap={1} my={2}>
       <Box flexGrow={1}>
         <LinearProgress variant="determinate" value={value} />
       </Box>
-      <Typography variant="body2" color="text.secondary">{`${Math.round(value)}%`}</Typography>
+      <Typography variant="body2" color="text.secondary">
+        {`${Math.round(value)}%`}
+      </Typography>
     </Box>
   );
 }
