@@ -44,6 +44,16 @@ export default function SectionedTextInput({
     });
   }, []);
 
+  const mergeUp = useCallback((i: number) => {
+    setSections(p => {
+      if (i === 0) return p;
+      const n = [...p];
+      n[i - 1] = (n[i - 1] + ' ' + n[i]).trim();
+      n.splice(i, 1);
+      return n;
+    });
+  }, []);
+
   return (
     <div className="flex flex-col gap-2 w-full">
       {sections.map((txt, i) => {
@@ -53,8 +63,10 @@ export default function SectionedTextInput({
             <SectionEditor
               value={txt}
               disabled={done}
+              showDelete={i > 0 && !completed.includes(i-1)}
               onChange={v => update(i, v)}
               onSplit={(a, b) => split(i, a, b)}
+              onDelete={() => mergeUp(i)}
             />
             {i < sections.length - 1 && (
               <div className="w-full flex justify-center text-2xl select-none opacity-60">⋯⋯⋯</div>
@@ -72,11 +84,13 @@ export default function SectionedTextInput({
 interface SectionEditorProps {
   value: string;
   disabled?: boolean;
+  showDelete: boolean;
   onChange(v: string): void;
   onSplit(before: string, after: string): void;
+  onDelete(): void;
 }
 
-function SectionEditor({ value, disabled, onChange, onSplit }: SectionEditorProps) {
+function SectionEditor({ value, disabled, showDelete, onChange, onSplit, onDelete }: SectionEditorProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [hover, setHover] = useState<{ rect: DOMRect; index: number } | null>(null);
 
@@ -130,6 +144,17 @@ function SectionEditor({ value, disabled, onChange, onSplit }: SectionEditorProp
       onMouseLeave={() => setHover(null)}
       onClick={performSplit}
     >
+      {showDelete && !disabled && (
+        <button
+            className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2
+                 w-8 h-8 bg-white border rounded-full shadow
+   flex items-center justify-center
+              text-gray-400 hover:text-red-500"
+            onClick={onDelete}
+            >
+              X
+            </button>
+      )}
       <div
         ref={ref}
         contentEditable={!disabled}
