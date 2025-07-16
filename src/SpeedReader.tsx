@@ -47,7 +47,7 @@ export default function SpeedReader() {
       setCurrentWord(words[wordIdx]);
       setProgress((wordIdx / (words.length - 1)) * 100);
 
-      if (wordIdx < words.length - 1) {
+      if (wordIdx <= words.length - 1) {
         setWordIdx(i => i + 1);
       } else {
         // finished section
