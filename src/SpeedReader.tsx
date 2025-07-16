@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Box, Button, Container, CssBaseline, LinearProgress, Stack, TextField, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
+import SectionedTextInput from "./components/SectionedTextInput";
 
 /*
  ──────────────────────────────────────────────────────────────────────────────
@@ -80,13 +81,8 @@ export default function SpeedReader() {
             onChange={handleWpmChange}
             fullWidth
           />
-          <TextField
-            label="Text to read"
-            multiline
-            rows={10}
-            value={text}
-            onChange={e => setText(e.target.value)}
-            fullWidth
+          <SectionedTextInput
+            onSectionsChange={sections => setText(sections.join(' '))}
           />
       </Grid>
     </Container>
