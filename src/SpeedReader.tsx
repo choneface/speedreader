@@ -25,8 +25,9 @@ export default function SpeedReader() {
   const [playing, setPlaying] = useState(false);
   const [wordIdx, setWordIdx] = useState(0);
   const [currentWord, setCurrentWord] = useState('');
-  const [wpm, setWpm] = useState(250);
-  const wait = 60_000 / wpm;
+  const [wpm, setWpm] = useState<string | number>(500);
+  const effectiveWpm = typeof wpm === 'number' && wpm > 0 ? wpm : 500;
+  const wait = 60_000 / effectiveWpm;
 
   /* progress bar inside section */
   const [progress, setProgress] = useState(0);
@@ -65,8 +66,13 @@ export default function SpeedReader() {
   /* handlers */
   const togglePlay = () => setPlaying(p => !p);
   const handleWpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = Number(e.target.value);
-    if (!Number.isNaN(v) && v > 0) setWpm(v);
+    const v = e.target.value;
+    if (v === '') {
+      setWpm('');
+    } else {
+      const num = Number(v);
+      if (!Number.isNaN(num) && num > 0) setWpm(num);
+    }
   };
 
   /* render */
@@ -115,6 +121,7 @@ export default function SpeedReader() {
             fullWidth
             value={wpm}
             onChange={handleWpmChange}
+            inputProps={{ min: 1 }}
           />
       </Grid>
 
