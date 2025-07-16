@@ -82,14 +82,31 @@ export default function SpeedReader() {
 
       <Grid container spacing={2} sx={{ my: 3 }}>
       <Stack direction="row" spacing={2} justifyContent="center" height="100%" alignItems="center">
-            <Button
-              variant="contained"
-              onClick={togglePlay}
-              disabled={completed.length === sections.length}
-            >
-              {playing ? 'Pause' : 'Play'}
-            </Button>
-          </Stack>
+  {completed.length === sections.length ? (
+    <Button
+      variant="contained"
+      color="error"
+      onClick={() => {
+        setCompleted([]);
+        setCurrent(0);
+        setWordIdx(0);
+        setProgress(0);
+        setCurrentWord('');
+        setPlaying(false);
+      }}
+    >
+      Reset
+    </Button>
+  ) : (
+    <Button
+      variant="contained"
+      onClick={togglePlay}
+      disabled={false}
+    >
+      {playing ? 'Pause' : 'Play'}
+    </Button>
+  )}
+</Stack>
           <TextField
             label="Words per minute"
             type="number"
