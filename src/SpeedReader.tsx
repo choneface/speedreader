@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
   Button,
@@ -9,24 +9,24 @@ import {
   Typography,
   TextField,
   Grid,
-} from '@mui/material';
-import SectionedTextInput from './components/SectionedTextInput';
+} from "@mui/material";
+import SectionedTextInput from "./components/SectionedTextInput";
 
 /*─────────────────────────────────────────────────────────────────────────────
   SpeedReader v2  –  section‑aware with WPM control
   ---------------------------------------------------------------------------*/
 export default function SpeedReader() {
   /* text & sections */
-  const [sections, setSections] = useState<string[]>(['']);
-  const [current, setCurrent] = useState(0);          // section index
+  const [sections, setSections] = useState<string[]>([""]);
+  const [current, setCurrent] = useState(0); // section index
   const [completed, setCompleted] = useState<number[]>([]);
 
   /* reading */
   const [playing, setPlaying] = useState(false);
   const [wordIdx, setWordIdx] = useState(0);
-  const [currentWord, setCurrentWord] = useState('');
+  const [currentWord, setCurrentWord] = useState("");
   const [wpm, setWpm] = useState<string | number>(500);
-  const effectiveWpm = typeof wpm === 'number' && wpm > 0 ? wpm : 500;
+  const effectiveWpm = typeof wpm === "number" && wpm > 0 ? wpm : 500;
   const wait = 60_000 / effectiveWpm;
 
   /* progress bar inside section */
@@ -36,8 +36,8 @@ export default function SpeedReader() {
   const words = useMemo(() => {
     return (
       sections[current]
-        ?.replaceAll(/[\r\n\t]+/g, ' ')
-        .split(' ')
+        ?.replaceAll(/[\r\n\t]+/g, " ")
+        .split(" ")
         .filter(Boolean) ?? []
     );
   }, [sections, current]);
@@ -52,26 +52,26 @@ export default function SpeedReader() {
       setProgress((wordIdx / (words.length - 1)) * 100);
 
       if (wordIdx <= words.length - 1) {
-        setWordIdx(i => i + 1);
+        setWordIdx((i) => i + 1);
       } else {
         // finished section
-        setCompleted(prev => [...prev, current]);
+        setCompleted((prev) => [...prev, current]);
         setPlaying(false);
         setWordIdx(0);
         setProgress(0);
-        setCurrentWord('');
-        setCurrent(i => Math.min(i + 1, sections.length - 1));
+        setCurrentWord("");
+        setCurrent((i) => Math.min(i + 1, sections.length - 1));
       }
     }, wait);
     return () => clearTimeout(timer);
   }, [playing, wordIdx, wait, words, current, sections.length]);
 
   /* handlers */
-  const togglePlay = () => setPlaying(p => !p);
+  const togglePlay = () => setPlaying((p) => !p);
   const handleWpmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
-    if (v === '') {
-      setWpm('');
+    if (v === "") {
+      setWpm("");
     } else {
       const num = Number(v);
       if (!Number.isNaN(num) && num > 0) setWpm(num);
@@ -84,48 +84,54 @@ export default function SpeedReader() {
       <CssBaseline />
 
       <Typography variant="h2" align="center" sx={{ mt: 2 }}>
-        {currentWord || '...'}
+        {currentWord || "..."}
       </Typography>
 
       <LinearProgressWithLabel value={progress} />
 
       <Grid container spacing={2} sx={{ my: 3 }}>
-      <Stack direction="row" spacing={2} justifyContent="center" height="100%" alignItems="center">
-  {completed.length === sections.length ? (
-    <Button
-      variant="contained"
-      color="error"
-      sx={{ textTransform: 'none' }}
-      onClick={() => {
-        setCompleted([]);
-        setCurrent(0);
-        setWordIdx(0);
-        setProgress(0);
-        setCurrentWord('');
-        setPlaying(false);
-      }}
-    >
-      Reset
-    </Button>
-  ) : (
-    <Button
-      variant="contained"
-      onClick={togglePlay}
-      disabled={false}
-      sx={{ textTransform: 'none' }}
-    >
-      {playing ? 'Pause' : 'Play'}
-    </Button>
-  )}
-</Stack>
-          <TextField
-            label="Words per minute"
-            type="number"
-            fullWidth
-            value={wpm}
-            onChange={handleWpmChange}
-            inputProps={{ min: 1 }}
-          />
+        <Stack
+          direction="row"
+          spacing={2}
+          justifyContent="center"
+          height="100%"
+          alignItems="center"
+        >
+          {completed.length === sections.length ? (
+            <Button
+              variant="contained"
+              color="error"
+              sx={{ textTransform: "none" }}
+              onClick={() => {
+                setCompleted([]);
+                setCurrent(0);
+                setWordIdx(0);
+                setProgress(0);
+                setCurrentWord("");
+                setPlaying(false);
+              }}
+            >
+              Reset
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              onClick={togglePlay}
+              disabled={false}
+              sx={{ textTransform: "none" }}
+            >
+              {playing ? "Pause" : "Play"}
+            </Button>
+          )}
+        </Stack>
+        <TextField
+          label="Words per minute"
+          type="number"
+          fullWidth
+          value={wpm}
+          onChange={handleWpmChange}
+          inputProps={{ min: 1 }}
+        />
       </Grid>
 
       <SectionedTextInput
