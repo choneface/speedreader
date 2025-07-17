@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -33,11 +33,14 @@ export default function SpeedReader() {
   const [progress, setProgress] = useState(0);
 
   /* words of current section */
-  const words =
-    sections[current]
-      ?.replaceAll(/[\r\n\t]+/g, ' ')
-      .split(' ')
-      .filter(Boolean) ?? [];
+  const words = useMemo(() => {
+    return (
+      sections[current]
+        ?.replaceAll(/[\r\n\t]+/g, ' ')
+        .split(' ')
+        .filter(Boolean) ?? []
+    );
+  }, [sections, current]);
 
   /* reading loop */
   useEffect(() => {
