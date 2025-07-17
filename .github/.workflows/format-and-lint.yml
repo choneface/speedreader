@@ -2,8 +2,9 @@ name: format-and-lint
 
 on:
   push:
-    branches: ['**']
+    branches: ["main"]
   pull_request:
+    branches: ["main"]
 
 jobs:
   test:
