@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Firebase CLI local artifacts
+.firebase/
+firebase-debug.log
+
+# Optional: if you generate per‑machine overrides
+.firebaserc.local

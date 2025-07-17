@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Scissors } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Scissors } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 /* ────────────────────────────────────────────────────────────────────────────
    SectionedTextInput
@@ -12,12 +12,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 */
 export interface SectionedTextInputProps {
   initialSections?: string[];
-  completed?: number[];                   // indices that are done
+  completed?: number[]; // indices that are done
   onSectionsChange?(sections: string[]): void;
 }
 
 export default function SectionedTextInput({
-  initialSections = [''],
+  initialSections = [""],
   completed = [],
   onSectionsChange,
 }: SectionedTextInputProps) {
@@ -28,7 +28,7 @@ export default function SectionedTextInput({
 
   /* helpers */
   const update = useCallback((i: number, v: string) => {
-    setSections(p => {
+    setSections((p) => {
       const n = [...p];
       n[i] = v;
       return n;
@@ -36,7 +36,7 @@ export default function SectionedTextInput({
   }, []);
 
   const split = useCallback((i: number, a: string, b: string) => {
-    setSections(p => {
+    setSections((p) => {
       const n = [...p];
       n[i] = a;
       n.splice(i + 1, 0, b);
@@ -45,10 +45,10 @@ export default function SectionedTextInput({
   }, []);
 
   const mergeUp = useCallback((i: number) => {
-    setSections(p => {
+    setSections((p) => {
       if (i === 0) return p;
       const n = [...p];
-      n[i - 1] = (n[i - 1] + ' ' + n[i]).trim();
+      n[i - 1] = (n[i - 1] + " " + n[i]).trim();
       n.splice(i, 1);
       return n;
     });
@@ -63,13 +63,15 @@ export default function SectionedTextInput({
             <SectionEditor
               value={txt}
               disabled={done}
-              showDelete={i > 0 && !completed.includes(i-1)}
-              onChange={v => update(i, v)}
+              showDelete={i > 0 && !completed.includes(i - 1)}
+              onChange={(v) => update(i, v)}
               onSplit={(a, b) => split(i, a, b)}
               onDelete={() => mergeUp(i)}
             />
             {i < sections.length - 1 && (
-              <div className="w-full flex justify-center text-2xl select-none opacity-60">⋯⋯⋯</div>
+              <div className="w-full flex justify-center text-2xl select-none opacity-60">
+                ⋯⋯⋯
+              </div>
             )}
           </React.Fragment>
         );
@@ -90,41 +92,59 @@ interface SectionEditorProps {
   onDelete(): void;
 }
 
-function SectionEditor({ value, disabled, showDelete, onChange, onSplit, onDelete }: SectionEditorProps) {
+function SectionEditor({
+  value,
+  disabled,
+  showDelete,
+  onChange,
+  onSplit,
+  onDelete,
+}: SectionEditorProps) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const [hover, setHover] = useState<{ rect: DOMRect; index: number } | null>(null);
+  const [hover, setHover] = useState<{ rect: DOMRect; index: number } | null>(
+    null,
+  );
 
   useEffect(() => {
-    if (ref.current && ref.current.innerText !== value) ref.current.innerText = value;
+    if (ref.current && ref.current.innerText !== value)
+      ref.current.innerText = value;
   }, [value]);
 
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     if (disabled) return;
     e.preventDefault();
-    const txt = e.clipboardData.getData('text/plain');
-    document.execCommand('insertText', false, txt);
+    const txt = e.clipboardData.getData("text/plain");
+    document.execCommand("insertText", false, txt);
   };
 
-  const handleInput = () => !disabled && ref.current && onChange(ref.current.innerText);
+  const handleInput = () =>
+    !disabled && ref.current && onChange(ref.current.innerText);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (disabled) return;
     const raw = document.caretRangeFromPoint?.(e.clientX, e.clientY);
-    if (!raw || !ref.current || !ref.current.contains(raw.startContainer)) return setHover(null);
+    if (!raw || !ref.current || !ref.current.contains(raw.startContainer))
+      return setHover(null);
 
     const pre = document.createRange();
     pre.setStart(ref.current, 0);
     pre.setEnd(raw.startContainer, raw.startOffset);
     let idx = pre.toString().length;
     const txt = value;
-    while (idx < txt.length && txt[idx] !== ' ' && txt[idx] != '\n') idx++;
+    while (idx < txt.length && txt[idx] !== " " && txt[idx] != "\n") idx++;
     if (idx === txt.length) return setHover(null);
 
     const snap = document.createRange();
-    snap.setStart(raw.startContainer, raw.startOffset + (idx - pre.toString().length));
+    snap.setStart(
+      raw.startContainer,
+      raw.startOffset + (idx - pre.toString().length),
+    );
     snap.collapse(true);
     const rect = snap.getBoundingClientRect();
-    setHover({ rect: new DOMRect(rect.right + 15, rect.top, 0, rect.height), index: idx });
+    setHover({
+      rect: new DOMRect(rect.right + 15, rect.top, 0, rect.height),
+      index: idx,
+    });
   };
 
   const performSplit = () => {
@@ -138,7 +158,9 @@ function SectionEditor({ value, disabled, showDelete, onChange, onSplit, onDelet
   return (
     <div
       className={`relative border rounded-2xl p-4 shadow-sm ${
-        disabled ? 'bg-gray-100 text-gray-500 italic' : 'bg-white border-gray-300'
+        disabled
+          ? "bg-gray-100 text-gray-500 italic"
+          : "bg-white border-gray-300"
       }`}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setHover(null)}
@@ -146,14 +168,14 @@ function SectionEditor({ value, disabled, showDelete, onChange, onSplit, onDelet
     >
       {showDelete && !disabled && (
         <button
-            className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2
+          className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2
                  w-8 h-8 bg-white border rounded-full shadow
    flex items-center justify-center
               text-gray-400 hover:text-red-500"
-            onClick={onDelete}
-            >
-              X
-            </button>
+          onClick={onDelete}
+        >
+          X
+        </button>
       )}
       <div
         ref={ref}
@@ -166,43 +188,40 @@ function SectionEditor({ value, disabled, showDelete, onChange, onSplit, onDelet
 
       {!disabled && hover && (
         <AnimatePresence>
-        {hover && (
-          <motion.div
-            key="split-cursor"
-            initial={{ opacity: 0, scaleY: 0.8 }}
-            animate={{ opacity: 1, scaleY: 1 }}
-            exit={{ opacity: 0, scaleY: 0.8 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className="pointer-events-none absolute z-50"
-            style={{
-              left:
-                hover.rect.right - ref.current!.getBoundingClientRect().left,
-              top:
-                hover.rect.top -
-                ref.current!.getBoundingClientRect().top +
-                hover.rect.height / 2,
-            }}
-            aria-label="Split position"
-          >
-            {/* tiny guide tick */}
-            <div className="w-[2px] h-10 bg-blue-500/70 rounded-sm" />
-      
-            {/* scissors inside a circular badge */}
+          {hover && (
             <motion.div
-              aria-hidden
-              whileHover={{ rotate: [0, -10, 0] }}
-              className="-translate-y-1/2 -left-[0.75rem] absolute flex items-center justify-center
-                         w-6 h-6 rounded-full bg-gray-200/80 shadow-sm backdrop-blur"
+              key="split-cursor"
+              initial={{ opacity: 0, scaleY: 0.8 }}
+              animate={{ opacity: 1, scaleY: 1 }}
+              exit={{ opacity: 0, scaleY: 0.8 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="pointer-events-none absolute z-50"
+              style={{
+                left:
+                  hover.rect.right - ref.current!.getBoundingClientRect().left,
+                top:
+                  hover.rect.top -
+                  ref.current!.getBoundingClientRect().top +
+                  hover.rect.height / 2,
+              }}
+              aria-label="Split position"
             >
-              <Scissors size={14} className="text-gray-700" />
+              {/* tiny guide tick */}
+              <div className="w-[2px] h-10 bg-blue-500/70 rounded-sm" />
+
+              {/* scissors inside a circular badge */}
+              <motion.div
+                aria-hidden
+                whileHover={{ rotate: [0, -10, 0] }}
+                className="-translate-y-1/2 -left-[0.75rem] absolute flex items-center justify-center
+                         w-6 h-6 rounded-full bg-gray-200/80 shadow-sm backdrop-blur"
+              >
+                <Scissors size={14} className="text-gray-700" />
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
+          )}
+        </AnimatePresence>
       )}
     </div>
   );
 }
-
-/* Deps: lucide-react, framer-motion, Tailwind 3 */
