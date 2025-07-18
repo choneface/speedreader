@@ -36,11 +36,43 @@ export default function SectionedTextInput({
     [sections, onSectionsChange],
   );
 
+  // Always ensure a blank section at the end and never more than one
+  useEffect(() => {
+    // Remove extra blank sections at the end
+    let n = sections;
+    while (
+      n.length > 1 &&
+      n[n.length - 1].text === "" &&
+      n[n.length - 2].text === ""
+    ) {
+      n = n.slice(0, -1);
+    }
+    // Ensure a blank section at the end
+    if (n.length === 0 || n[n.length - 1].text !== "") {
+      n = [...n, make("")];
+    }
+    if (n !== sections) {
+      setSections(n);
+    }
+  }, [sections]);
+
   /* helpers */
   const update = useCallback((i: number, v: string) => {
     setSections((p) => {
-      const n = [...p];
+      let n = [...p];
       n[i] = { ...n[i], text: v };
+      // Ensure a blank section at the end if editing the last section
+      if (i === n.length - 1 && v !== "") {
+        n.push(make(""));
+      }
+      // Remove extra blank sections at the end if needed
+      while (
+        n.length > 1 &&
+        n[n.length - 1].text === "" &&
+        n[n.length - 2].text === ""
+      ) {
+        n = n.slice(0, -1);
+      }
       return n;
     });
   }, []);
@@ -70,12 +102,14 @@ export default function SectionedTextInput({
     <div className="flex flex-col gap-2 w-full">
       {sections.map((sec, i) => {
         const done = completed.includes(i);
+        // Do not show delete button on the last buffer section
+        const isLast = i === sections.length - 1;
         return (
           <React.Fragment key={sec.id}>
             <SectionEditor
               value={sec.text}
               disabled={done}
-              showDelete={i > 0 && !completed.includes(i - 1)}
+              showDelete={i > 0 && !completed.includes(i - 1) && !isLast}
               onChange={(v) => update(i, v)}
               onSplit={(parts) => split(i, ...parts)}
               onDelete={() => mergeUp(i)}
