@@ -35,11 +35,11 @@ export default function SectionedTextInput({
     });
   }, []);
 
-  const split = useCallback((i: number, a: string, b: string) => {
+  // 1. Update split to handle multiple sections
+  const split = useCallback((i: number, ...parts: string[]) => {
     setSections((p) => {
       const n = [...p];
-      n[i] = a;
-      n.splice(i + 1, 0, b);
+      n.splice(i, 1, ...parts);
       return n;
     });
   }, []);
@@ -65,7 +65,8 @@ export default function SectionedTextInput({
               disabled={done}
               showDelete={i > 0 && !completed.includes(i - 1)}
               onChange={(v) => update(i, v)}
-              onSplit={(a, b) => split(i, a, b)}
+              // 2. Update onSplit to pass all parts
+              onSplit={(parts) => split(i, ...parts)}
               onDelete={() => mergeUp(i)}
             />
             {i < sections.length - 1 && (
@@ -83,12 +84,13 @@ export default function SectionedTextInput({
 /* ────────────────────────────────────────────────────────────────────────────
    SectionEditor
    --------------------------------------------------------------------------*/
+// 3. Update SectionEditorProps and SectionEditor
 interface SectionEditorProps {
   value: string;
   disabled?: boolean;
   showDelete: boolean;
   onChange(v: string): void;
-  onSplit(before: string, after: string): void;
+  onSplit(parts: string[]): void;
   onDelete(): void;
 }
 
@@ -110,15 +112,38 @@ function SectionEditor({
       ref.current.innerText = value;
   }, [value]);
 
+  // 4. Update handleInput to auto-split on newlines
+  const handleInput = () => {
+    if (disabled || !ref.current) return;
+    const val = ref.current.innerText;
+    if (val.includes("\n")) {
+      // Remove empty sections from consecutive newlines
+      const parts = val
+        .split(/\n/g)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      onSplit(parts);
+    } else {
+      onChange(val);
+    }
+  };
+
+  // 5. Update handlePaste to auto-split on newlines
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     if (disabled) return;
     e.preventDefault();
     const txt = e.clipboardData.getData("text/plain");
-    document.execCommand("insertText", false, txt);
+    if (txt.includes("\n")) {
+      // Remove empty sections from consecutive newlines
+      const parts = txt
+        .split(/\n/g)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      onSplit(parts);
+    } else {
+      document.execCommand("insertText", false, txt);
+    }
   };
-
-  const handleInput = () =>
-    !disabled && ref.current && onChange(ref.current.innerText);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (disabled) return;
@@ -151,7 +176,7 @@ function SectionEditor({
     if (!hover || disabled) return;
     const before = value.slice(0, hover.index).trimEnd();
     const after = value.slice(hover.index).trimStart();
-    onSplit(before, after);
+    onSplit([before, after]);
     setHover(null);
   };
 
