@@ -1,15 +1,20 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useLayoutEffect,
+} from "react";
 import { Scissors } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-/* ────────────────────────────────────────────────────────────────────────────
-   SectionedTextInput
-   --------------------------------------------------------------------------
-   • Renders editable text split into sections.
-   • Emits `onSectionsChange` with latest sections array.
-   • Accepts `completed` (indices) to grey‑out finished sections and disable
-     further splitting in them.
-*/
+type Section = { id: string; text: string };
+
+const make = (txt: string): Section => ({
+  id: crypto.randomUUID(), // any uid generator works
+  text: txt,
+});
+
 export interface SectionedTextInputProps {
   initialSections?: string[];
   completed?: number[]; // indices that are done
@@ -21,25 +26,29 @@ export default function SectionedTextInput({
   completed = [],
   onSectionsChange,
 }: SectionedTextInputProps) {
-  const [sections, setSections] = useState<string[]>(initialSections);
+  const [sections, setSections] = useState<Section[]>(
+    initialSections.map(make),
+  );
 
   /* bubble up */
-  useEffect(() => onSectionsChange?.(sections), [sections, onSectionsChange]);
+  useEffect(
+    () => onSectionsChange?.(sections.map((s) => s.text)),
+    [sections, onSectionsChange],
+  );
 
   /* helpers */
   const update = useCallback((i: number, v: string) => {
     setSections((p) => {
       const n = [...p];
-      n[i] = v;
+      n[i] = { ...n[i], text: v };
       return n;
     });
   }, []);
 
-  // 1. Update split to handle multiple sections
   const split = useCallback((i: number, ...parts: string[]) => {
-    setSections((p) => {
-      const n = [...p];
-      n.splice(i, 1, ...parts);
+    setSections((prev) => {
+      const n = [...prev];
+      n.splice(i, 1, ...parts.map(make)); // new ids for new pieces
       return n;
     });
   }, []);
@@ -48,7 +57,10 @@ export default function SectionedTextInput({
     setSections((p) => {
       if (i === 0) return p;
       const n = [...p];
-      n[i - 1] = (n[i - 1] + " " + n[i]).trim();
+      n[i - 1] = {
+        ...n[i - 1],
+        text: (n[i - 1].text + " " + n[i].text).trim(),
+      };
       n.splice(i, 1);
       return n;
     });
@@ -56,21 +68,20 @@ export default function SectionedTextInput({
 
   return (
     <div className="flex flex-col gap-2 w-full">
-      {sections.map((txt, i) => {
+      {sections.map((sec, i) => {
         const done = completed.includes(i);
         return (
-          <React.Fragment key={i}>
+          <React.Fragment key={sec.id}>
             <SectionEditor
-              value={txt}
+              value={sec.text}
               disabled={done}
               showDelete={i > 0 && !completed.includes(i - 1)}
               onChange={(v) => update(i, v)}
-              // 2. Update onSplit to pass all parts
               onSplit={(parts) => split(i, ...parts)}
               onDelete={() => mergeUp(i)}
             />
             {i < sections.length - 1 && (
-              <div className="w-full flex justify-center text-2xl select-none opacity-60">
+              <div className="w-full flex justify-center text-2xl opacity-60 select-none">
                 ⋯⋯⋯
               </div>
             )}
@@ -107,21 +118,23 @@ function SectionEditor({
     null,
   );
 
-  useEffect(() => {
-    if (ref.current && ref.current.innerText !== value)
+  useLayoutEffect(() => {
+    if (ref.current && ref.current.innerText !== value) {
       ref.current.innerText = value;
+    }
   }, [value]);
 
   // 4. Update handleInput to auto-split on newlines
   const handleInput = () => {
     if (disabled || !ref.current) return;
-    const val = ref.current.innerText;
-    if (val.includes("\n")) {
-      // Remove empty sections from consecutive newlines
-      const parts = val
-        .split(/\n/g)
-        .map((s) => s.trim())
-        .filter(Boolean);
+    let val = ref.current.innerText;
+    // Remove leading/trailing newlines
+    val = val.replace(/^\n+|\n+$/g, "");
+    // Find first sequence of newlines
+    const match = val.match(/^(.*?)(\n+)(.+)$/s);
+    if (match && match[1].trim() && match[3].trim()) {
+      // Content on both sides, split into two sections, discard newlines
+      const parts = [match[1].trim(), match[3].trim()];
       onSplit(parts);
     } else {
       onChange(val);
@@ -132,7 +145,9 @@ function SectionEditor({
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     if (disabled) return;
     e.preventDefault();
-    const txt = e.clipboardData.getData("text/plain");
+    let txt = e.clipboardData.getData("text/plain");
+    // Discard leading newlines
+    txt = txt.replace(/^\n+/, "");
     if (txt.includes("\n")) {
       // Remove empty sections from consecutive newlines
       const parts = txt
