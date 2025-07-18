@@ -34,11 +34,30 @@ export default function SpeedReader() {
 
   /* words of current section */
   const words = useMemo(() => {
+    // Helper to split hyphenated words as described
+    function splitHyphenatedWord(word: string): string[] {
+      if (!word.includes("-")) return [word];
+      const parts = word.split("-");
+      if (parts.length === 1) return [word];
+      const result: string[] = [];
+      for (let i = 0; i < parts.length; i++) {
+        if (i === 0) {
+          result.push(parts[i] + "-");
+        } else if (i === parts.length - 1) {
+          result.push("-" + parts[i]);
+        } else {
+          result.push("-" + parts[i] + "-");
+        }
+      }
+      return result;
+    }
+
     return (
       sections[current]
         ?.replaceAll(/[\r\n\t]+/g, " ")
         .split(" ")
-        .filter(Boolean) ?? []
+        .filter(Boolean)
+        .flatMap(splitHyphenatedWord) ?? []
     );
   }, [sections, current]);
 
