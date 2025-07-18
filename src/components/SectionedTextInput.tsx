@@ -7,6 +7,8 @@ import React, {
 } from "react";
 import { Scissors } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { PillButton } from "./PillButton";
+import { PillButtonContainer } from "./PillButtonContainer";
 
 type Section = { id: string; text: string };
 
@@ -254,33 +256,33 @@ function SectionEditor({
       onMouseLeave={() => setHover(null)}
       onClick={performSplit}
     >
-      {/* Pencil (edit) button: always show if canEdit */}
-      {canEdit && !disabled && (
-        <button
-          className="absolute top-0 right-10 transform translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white border rounded-full shadow flex items-center justify-center text-gray-400 hover:text-blue-500"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (isEditing) {
-              onExitEdit();
-            } else {
-              onEdit();
-            }
-          }}
-          aria-label={isEditing ? "Exit edit mode" : "Edit section"}
-        >
-          ✎
-        </button>
-      )}
-      {/* X (delete) button */}
-      {showDelete && !disabled && (
-        <button
-          className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white border rounded-full shadow flex items-center justify-center text-gray-400 hover:text-red-500"
-          onClick={onDelete}
-          aria-label="Delete section"
-        >
-          X
-        </button>
-      )}
+      {/* PillButtonContainer groups edit and delete buttons */}
+      <PillButtonContainer>
+        {showDelete && !disabled && (
+          <PillButton
+            onClick={onDelete}
+            ariaLabel="Delete section"
+            className="hover:text-red-500"
+          >
+            x
+          </PillButton>
+        )}
+        {canEdit && !disabled && (
+          <PillButton
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isEditing) {
+                onExitEdit();
+              } else {
+                onEdit();
+              }
+            }}
+            ariaLabel={isEditing ? "Exit edit mode" : "Edit section"}
+          >
+            ✎
+          </PillButton>
+        )}
+      </PillButtonContainer>
       <div
         ref={ref}
         contentEditable={!disabled}
