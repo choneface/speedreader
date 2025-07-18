@@ -1,13 +1,60 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
+    <title>Crix Reader - Privacy-first Speed-Reading Web App</title>
+
+    <!-- Core meta -->
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Crix Reader is an open-source, privacy-first speed reading web app. 100% browser-only: no accounts, no tracking, no data stored."
+    />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://crixreader.com/" />
+
+    <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Crix Reader</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="Crix Reader - Privacy-first Speed-Reading Web App"
+    />
+    <meta
+      property="og:description"
+      content="Open-source speed reading web app. Runs entirely in your browser—no accounts, no tracking, no stored data."
+    />
+    <meta property="og:url" content="https://crixreader.com/" />
+
+    <!-- You have no dedicated social preview image yet; re-use icon-192 as a placeholder. -->
+    <meta property="og:image" content="https://crixreader.com/icon-192.png" />
+
+    <!-- Minimal JSON-LD -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "url": "https://crixreader.com/",
+        "name": "Crix Reader - Privacy-first Speed-Reading Web App",
+        "description": "Open-source, privacy-first speed reading web app. Browser-only; no accounts or tracking.",
+        "inLanguage": "en"
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <main>
+      <h1>Crix Reader - Privacy-first Speed-Reading Web App</h1>
+      <p>
+        Privacy-first, open-source speed reading in your browser—no accounts, no
+        tracking, and your text never leaves the page.
+      </p>
+      <div id="root"></div>
+    </main>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
