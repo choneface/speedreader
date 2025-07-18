@@ -29,6 +29,8 @@ export default function SectionedTextInput({
   const [sections, setSections] = useState<Section[]>(
     initialSections.map(make),
   );
+  // New: Track which section is in edit mode (by index)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   /* bubble up */
   useEffect(
@@ -110,6 +112,9 @@ export default function SectionedTextInput({
               value={sec.text}
               disabled={done}
               showDelete={i > 0 && !completed.includes(i - 1) && !isLast}
+              isEditing={editingIndex === i}
+              onEdit={() => setEditingIndex(i)}
+              onExitEdit={() => setEditingIndex(null)}
               onChange={(v) => update(i, v)}
               onSplit={(parts) => split(i, ...parts)}
               onDelete={() => mergeUp(i)}
@@ -134,6 +139,9 @@ interface SectionEditorProps {
   value: string;
   disabled?: boolean;
   showDelete: boolean;
+  isEditing: boolean;
+  onEdit: () => void;
+  onExitEdit: () => void;
   onChange(v: string): void;
   onSplit(parts: string[]): void;
   onDelete(): void;
@@ -143,11 +151,15 @@ function SectionEditor({
   value,
   disabled,
   showDelete,
+  isEditing,
+  onEdit,
+  onExitEdit,
   onChange,
   onSplit,
   onDelete,
 }: SectionEditorProps) {
   const ref = useRef<HTMLDivElement | null>(null);
+  const canEdit = value.length > 0;
   const [hover, setHover] = useState<{ rect: DOMRect; index: number } | null>(
     null,
   );
@@ -195,7 +207,7 @@ function SectionEditor({
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (disabled) return;
+    if (disabled || isEditing) return;
     const raw = document.caretRangeFromPoint?.(e.clientX, e.clientY);
     if (!raw || !ref.current || !ref.current.contains(raw.startContainer))
       return setHover(null);
@@ -222,7 +234,7 @@ function SectionEditor({
   };
 
   const performSplit = () => {
-    if (!hover || disabled) return;
+    if (!hover || disabled || isEditing) return;
     const before = value.slice(0, hover.index).trimEnd();
     const after = value.slice(hover.index).trimStart();
     onSplit([before, after]);
@@ -231,22 +243,40 @@ function SectionEditor({
 
   return (
     <div
-      className={`relative border rounded-2xl p-4 shadow-sm ${
+      className={`relative border rounded-2xl p-4 shadow-sm transition-colors duration-150 ${
         disabled
-          ? "bg-gray-100 text-gray-500 italic"
-          : "bg-white border-gray-300"
+          ? "bg-gray-100 text-gray-500 italic border-gray-300"
+          : isEditing
+            ? "bg-white border-blue-500/70"
+            : "bg-white border-gray-300"
       }`}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setHover(null)}
       onClick={performSplit}
     >
+      {/* Pencil (edit) button: always show if canEdit */}
+      {canEdit && !disabled && (
+        <button
+          className="absolute top-0 right-10 transform translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white border rounded-full shadow flex items-center justify-center text-gray-400 hover:text-blue-500"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isEditing) {
+              onExitEdit();
+            } else {
+              onEdit();
+            }
+          }}
+          aria-label={isEditing ? "Exit edit mode" : "Edit section"}
+        >
+          ✎
+        </button>
+      )}
+      {/* X (delete) button */}
       {showDelete && !disabled && (
         <button
-          className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2
-                 w-8 h-8 bg-white border rounded-full shadow
-   flex items-center justify-center
-              text-gray-400 hover:text-red-500"
+          className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white border rounded-full shadow flex items-center justify-center text-gray-400 hover:text-red-500"
           onClick={onDelete}
+          aria-label="Delete section"
         >
           X
         </button>
@@ -258,9 +288,11 @@ function SectionEditor({
         className="outline-none whitespace-pre-wrap break-words min-h-[4rem]"
         onInput={handleInput}
         onPaste={handlePaste}
+        tabIndex={0}
       />
 
-      {!disabled && hover && (
+      {/* Only show split cursor if not editing and not disabled */}
+      {!disabled && !isEditing && hover && (
         <AnimatePresence>
           {hover && (
             <motion.div
@@ -287,8 +319,7 @@ function SectionEditor({
               <motion.div
                 aria-hidden
                 whileHover={{ rotate: [0, -10, 0] }}
-                className="-translate-y-1/2 -left-[0.75rem] absolute flex items-center justify-center
-                         w-6 h-6 rounded-full bg-gray-200/80 shadow-sm backdrop-blur"
+                className="-translate-y-1/2 -left-[0.75rem] absolute flex items-center justify-center w-6 h-6 rounded-full bg-gray-200/80 shadow-sm backdrop-blur"
               >
                 <Scissors size={14} className="text-gray-700" />
               </motion.div>
