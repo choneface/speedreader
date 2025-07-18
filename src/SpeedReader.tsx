@@ -116,7 +116,7 @@ export default function SpeedReader() {
           height="100%"
           alignItems="center"
         >
-          {completed.length === sections.length ? (
+          {completed.length === sections.length - 1 && sections.length != 1 ? (
             <Button
               variant="contained"
               color="error"
