@@ -107,7 +107,7 @@ export default function SpeedReader() {
     setPlaying(false);
 
     /* wipe text */
-    setSections([""]);          // for the reader
+    setSections([""]); // for the reader
     setResetCounter((k) => k + 1); // tells SectionedTextInput to reset itself
   };
 

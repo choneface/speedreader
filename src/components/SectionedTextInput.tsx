@@ -20,7 +20,7 @@ const make = (txt: string): Section => ({
 export interface SectionedTextInputProps {
   initialSections?: string[];
   completed?: number[];
-  resetSignal?:number;
+  resetSignal?: number;
   onSectionsChange?(sections: string[]): void;
 }
 
@@ -30,17 +30,17 @@ export default function SectionedTextInput({
   resetSignal,
   onSectionsChange,
 }: SectionedTextInputProps) {
-  const [sections, setSections] = useState<Section[]>(
-    initialSections.map(make),
+  const initialSectionsRef = React.useRef(initialSections);
+
+  const [sections, setSections] = useState(() =>
+    initialSectionsRef.current.map(make),
   );
-  // New: Track which section is in edit mode (by index)
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-
   useEffect(() => {
-    setSections(initialSections.map(make));
+    setSections(initialSectionsRef.current.map(make));
     setEditingIndex(null);
-  }, [resetSignal]); 
+  }, [resetSignal]);
 
   /* bubble up */
   useEffect(
