@@ -153,20 +153,22 @@ export default function SpeedReader() {
             <Button
               variant="contained"
               onClick={togglePlay}
-              disabled={false}
+              disabled={sections.length <= 1}
               sx={{ textTransform: "none" }}
             >
               {playing ? "Pause" : "Play"}
             </Button>
           )}
-          <Button
-            color="error"
-            variant="contained"
-            sx={{ textTransform: "none" }}
-            onClick={clearEverything}
-          >
-            Clear content
-          </Button>
+          {sections.length > 1 && (
+            <Button
+              color="error"
+              variant="contained"
+              sx={{ textTransform: "none" }}
+              onClick={clearEverything}
+            >
+              Clear content
+            </Button>
+          )}
         </Stack>
         <TextField
           label="Words per minute"
