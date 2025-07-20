@@ -13,26 +13,34 @@ import { PillButtonContainer } from "./PillButtonContainer";
 type Section = { id: string; text: string };
 
 const make = (txt: string): Section => ({
-  id: crypto.randomUUID(), // any uid generator works
+  id: crypto.randomUUID(),
   text: txt,
 });
 
 export interface SectionedTextInputProps {
   initialSections?: string[];
-  completed?: number[]; // indices that are done
+  completed?: number[];
+  resetSignal?: number;
   onSectionsChange?(sections: string[]): void;
 }
 
 export default function SectionedTextInput({
   initialSections = [""],
   completed = [],
+  resetSignal,
   onSectionsChange,
 }: SectionedTextInputProps) {
-  const [sections, setSections] = useState<Section[]>(
-    initialSections.map(make),
+  const initialSectionsRef = React.useRef(initialSections);
+
+  const [sections, setSections] = useState(() =>
+    initialSectionsRef.current.map(make),
   );
-  // New: Track which section is in edit mode (by index)
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setSections(initialSectionsRef.current.map(make));
+    setEditingIndex(null);
+  }, [resetSignal]);
 
   /* bubble up */
   useEffect(

@@ -8,7 +8,6 @@ import {
   Stack,
   Typography,
   TextField,
-  Grid,
 } from "@mui/material";
 import SectionedTextInput from "./components/SectionedTextInput";
 
@@ -31,6 +30,7 @@ export default function SpeedReader() {
 
   /* progress bar inside section */
   const [progress, setProgress] = useState(0);
+  const [resetCounter, setResetCounter] = useState(0);
 
   /* words of current section */
   const words = useMemo(() => {
@@ -97,6 +97,20 @@ export default function SpeedReader() {
     }
   };
 
+  const clearEverything = () => {
+    /* wipe local reader state */
+    setCompleted([]);
+    setCurrent(0);
+    setWordIdx(0);
+    setProgress(0);
+    setCurrentWord("");
+    setPlaying(false);
+
+    /* wipe text */
+    setSections([""]); // for the reader
+    setResetCounter((k) => k + 1); // tells SectionedTextInput to reset itself
+  };
+
   /* render */
   return (
     <Container maxWidth="md" className="py-10">
@@ -108,13 +122,16 @@ export default function SpeedReader() {
 
       <LinearProgressWithLabel value={progress} />
 
-      <Grid container spacing={2} sx={{ my: 3 }}>
+      <Box sx={{ my: 3 }}>
         <Stack
           direction="row"
           spacing={2}
-          justifyContent="center"
-          height="100%"
-          alignItems="center"
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "100%",
+            mb: 2,
+          }}
         >
           {completed.length === sections.length - 1 && sections.length != 1 ? (
             <Button
@@ -136,10 +153,20 @@ export default function SpeedReader() {
             <Button
               variant="contained"
               onClick={togglePlay}
-              disabled={false}
+              disabled={sections.length <= 1}
               sx={{ textTransform: "none" }}
             >
               {playing ? "Pause" : "Play"}
+            </Button>
+          )}
+          {sections.length > 1 && (
+            <Button
+              color="error"
+              variant="contained"
+              sx={{ textTransform: "none" }}
+              onClick={clearEverything}
+            >
+              Clear content
             </Button>
           )}
         </Stack>
@@ -149,12 +176,12 @@ export default function SpeedReader() {
           fullWidth
           value={wpm}
           onChange={handleWpmChange}
-          inputProps={{ min: 1 }}
         />
-      </Grid>
+      </Box>
 
       <SectionedTextInput
         completed={completed}
+        resetSignal={resetCounter}
         onSectionsChange={setSections}
       />
     </Container>
